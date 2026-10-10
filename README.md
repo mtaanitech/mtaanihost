@@ -104,7 +104,7 @@ npm run dev
 
 Then open:
 - http://localhost:5000
-- http://localhost:5000/admin
+- http://localhost
 
 ## API Endpoints
 
