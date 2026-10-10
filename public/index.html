@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MtaaniHost</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-white min-h-screen">
+  <div class="max-w-6xl mx-auto py-12 px-6">
+    <header class="flex justify-between items-center mb-10">
+      <h1 class="text-3xl font-bold">MtaaniHost</h1>
+      <div class="space-x-4">
+        <button id="showSignup" class="bg-blue-600 px-4 py-2 rounded">Sign Up</button>
+        <button id="showLogin" class="bg-slate-700 px-4 py-2 rounded">Login</button>
+      </div>
+    </header>
+
+    <section class="grid md:grid-cols-2 gap-8">
+      <div class="bg-slate-800 p-6 rounded-xl">
+        <h2 class="text-2xl font-bold mb-4">Deploy website or bot</h2>
+        <ul class="space-y-2 text-slate-300">
+          <li>✓ Static website deployment</li>
+          <li>✓ WhatsApp bots</li>
+          <li>✓ Telegram bots</li>
+          <li>✓ Discord bots</li>
+          <li>✓ Email verification</li>
+          <li>✓ Paystack billing</li>
+        </ul>
+      </div>
+
+      <div class="bg-slate-800 p-6 rounded-xl">
+        <div id="signupCard">
+          <h3 class="text-xl font-bold mb-4">Create your account</h3>
+          <form id="signupForm" class="space-y-4">
+            <input id="signupEmail" type="email" placeholder="Email" class="w-full p-3 rounded bg-slate-700" />
+            <input id="signupPassword" type="password" placeholder="Password" class="w-full p-3 rounded bg-slate-700" />
+            <button type="submit" class="w-full bg-green-600 p-3 rounded font-bold">Create Account</button>
+          </form>
+        </div>
+
+        <div id="loginCard" class="hidden">
+          <h3 class="text-xl font-bold mb-4">Login</h3>
+          <form id="loginForm" class="space-y-4">
+            <input id="loginEmail" type="email" placeholder="Email" class="w-full p-3 rounded bg-slate-700" />
+            <input id="loginPassword" type="password" placeholder="Password" class="w-full p-3 rounded bg-slate-700" />
+            <button type="submit" class="w-full bg-blue-600 p-3 rounded font-bold">Login</button>
+          </form>
+        </div>
+
+        <div id="msg" class="mt-4 text-sm text-slate-300"></div>
+      </div>
+    </section>
+
+    <section id="dashboard" class="hidden mt-10 bg-slate-800 p-6 rounded-xl">
+      <h2 class="text-2xl font-bold mb-5">Your Projects</h2>
+
+      <div class="grid md:grid-cols-2 gap-6">
+        <div>
+          <h3 class="text-lg font-semibold mb-3">Deploy Website</h3>
+          <form id="websiteForm" class="space-y-4">
+            <input id="projectName" type="text" placeholder="Project Name" class="w-full p-3 rounded bg-slate-700" />
+            <input id="githubUrl" type="text" placeholder="GitHub URL (optional)" class="w-full p-3 rounded bg-slate-700" />
+            <input id="zipFile" type="file" accept=".zip" class="w-full p-3 rounded bg-slate-700" />
+            <button type="submit" class="w-full bg-purple-600 p-3 rounded font-bold">Deploy Website</button>
+          </form>
+        </div>
+
+        <div>
+          <h3 class="text-lg font-semibold mb-3">Deploy Bot</h3>
+          <form id="botForm" class="space-y-4">
+            <input id="botName" type="text" placeholder="Bot Name" class="w-full p-3 rounded bg-slate-700" />
+            <select id="botType" class="w-full p-3 rounded bg-slate-700">
+              <option value="meta">Meta WhatsApp</option>
+              <option value="baileys">Baileys WhatsApp</option>
+              <option value="telegram">Telegram</option>
+              <option value="discord">Discord</option>
+            </select>
+            <input id="botCredential" type="text" placeholder="Token / API key" class="w-full p-3 rounded bg-slate-700" />
+            <button type="submit" class="w-full bg-pink-600 p-3 rounded font-bold">Deploy Bot</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="mt-8">
+        <h3 class="text-xl font-bold mb-3">Payment</h3>
+        <button id="payBtn" class="bg-green-600 px-5 py-3 rounded font-bold">Pay KES 200</button>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const state = {
+      token: localStorage.getItem("mtaanihost_token") || "",
+      user: JSON.parse(localStorage.getItem("mtaanihost_user") || "null")
+    };
+
+    function setMessage(text, isError = false) {
+      const el = document.getElementById("msg");
+      el.textContent = text;
+      el.className = `mt-4 text-sm ${isError ? "text-red-400" : "text-green-400"}`;
+    }
+
+    function showDashboard() {
+      document.getElementById("dashboard").classList.remove("hidden");
+    }
+
+    function showLogin() {
+      document.getElementById("signupCard").classList.add("hidden");
+      document.getElementById("loginCard").classList.remove("hidden");
+    }
+
+    function showSignup() {
+      document.getElementById("loginCard").classList.add("hidden");
+      document.getElementById("signupCard").classList.remove("hidden");
+    }
+
+    document.getElementById("showLogin").addEventListener("click", showLogin);
+    document.getElementById("showSignup").addEventListener("click", showSignup);
+
+    document.getElementById("signupForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("signupEmail").value;
+      const password = document.getElementById("signupPassword").value;
+
+      const res = await fetch("http://localhost:5000/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setMessage(data.message || "Signup failed", true);
+        return;
+      }
+
+      setMessage(data.message);
+      showLogin();
+    });
+
+    document.getElementById("loginForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("loginEmail").value;
+      const password = document.getElementById("loginPassword").value;
+
+      const res = await fetch("http://localhost:5000/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setMessage(data.message || "Login failed", true);
+        return;
+      }
+
+      state.token = data.token;
+      state.user = data.user;
+      localStorage.setItem("mtaanihost_token", state.token);
+      localStorage.setItem("mtaanihost_user", JSON.stringify(state.user));
+
+      setMessage("Login successful");
+      showDashboard();
+    });
+
+    document.getElementById("websiteForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const formData = new FormData();
+      formData.append("projectName", document.getElementById("projectName").value);
+      formData.append("githubUrl", document.getElementById("githubUrl").value);
+      const zip = document.getElementById("zipFile").files[0];
+      if (zip) formData.append("zipFile", zip);
+
+      const res = await fetch("http://localhost:5000/deploy-website", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${state.token}`
+        },
+        body: formData
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setMessage(data.message || "Deploy failed", true);
+        return;
+      }
+
+      setMessage("Website deployed successfully");
+      console.log(data);
+    });
+
+    document.getElementById("botForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const payload = {
+        projectName: document.getElementById("botName").value,
+        botType: document.getElementById("botType").value,
+        credentials: {
+          token: document.getElementById("botCredential").value
+        }
+      };
+
+      const res = await fetch("http://localhost:5000/deploy-bot", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${state.token}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setMessage(data.message || "Bot deployment failed", true);
+        return;
+      }
+
+      setMessage("Bot deployed successfully");
+      console.log(data);
+    });
+
+    document.getElementById("payBtn").addEventListener("click", async () => {
+      if (!state.user) {
+        setMessage("Please login first", true);
+        return;
+      }
+
+      const projectId = "demo-project-id";
+      const res = await fetch("http://localhost:5000/paystack/init", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: state.user.email,
+          amount: 200,
+          projectId,
+          userId: state.user.id
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setMessage(data.message || "Payment failed", true);
+        return;
+      }
+
+      window.location.href = data.authorization_url;
+    });
+
+    if (state.token && state.user) {
+      showDashboard();
+    }
+  </script>
+</body>
+</html>

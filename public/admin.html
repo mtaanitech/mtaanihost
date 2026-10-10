@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MtaaniHost Admin</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-white min-h-screen">
+  <div class="max-w-7xl mx-auto py-10 px-4">
+    <h1 class="text-3xl font-bold mb-8">Admin Panel</h1>
+
+    <div class="grid md:grid-cols-3 gap-4 mb-8">
+      <div class="bg-blue-600 p-5 rounded-lg">
+        <p class="text-sm opacity-75">Total Projects</p>
+        <p id="totalProjects" class="text-3xl font-bold">0</p>
+      </div>
+      <div class="bg-purple-600 p-5 rounded-lg">
+        <p class="text-sm opacity-75">Active</p>
+        <p id="activeProjects" class="text-3xl font-bold">0</p>
+      </div>
+      <div class="bg-green-600 p-5 rounded-lg">
+        <p class="text-sm opacity-75">Suspended</p>
+        <p id="suspendedProjects" class="text-3xl font-bold">0</p>
+      </div>
+    </div>
+
+    <div id="projectsContainer" class="bg-slate-800 p-4 rounded-xl"></div>
+  </div>
+
+  <script>
+    const adminKey = prompt("Admin key?");
+
+    async function loadProjects() {
+      const res = await fetch("http://localhost:5000/admin/projects", {
+        headers: {
+          "x-admin-key": adminKey
+        }
+      });
+
+      const data = await res.json();
+      document.getElementById("totalProjects").textContent = data.total;
+      document.getElementById("activeProjects").textContent = data.projects.filter(p => !p.suspended).length;
+      document.getElementById("suspendedProjects").textContent = data.projects.filter(p => p.suspended).length;
+
+      const rows = data.projects.map(project => `
+        <tr class="border-b border-slate-700">
+          <td class="p-3">${project.projectName}</td>
+          <td class="p-3">${project.type}</td>
+          <td class="p-3">${project.status}</td>
+          <td class="p-3">${project.paymentStatus}</td>
+          <td class="p-3">${project.expiresAt}</td>
+          <td class="p-3">
+            <button onclick="suspendProject('${project.id}')" class="bg-red-600 px-2 py-1 rounded">Suspend</button>
+            <button onclick="extendProject('${project.id}', 7)" class="bg-blue-600 px-2 py-1 rounded ml-2">+7 Days</button>
+          </td>
+        </tr>
+      `).join("");
+
+      document.getElementById("projectsContainer").innerHTML = `
+        <table class="w-full">
+          <thead class="bg-slate-700">
+            <tr>
+              <th class="p-3 text-left">Project</th>
+              <th class="p-3 text-left">Type</th>
+              <th class="p-3 text-left">Status</th>
+              <th class="p-3 text-left">Payment</th>
+              <th class="p-3 text-left">Expiry</th>
+              <th class="p-3 text-left">Actions</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
+    }
+
+    async function suspendProject(id) {
+      await fetch(`http://localhost:5000/admin/projects/${id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-key": adminKey
+        },
+        body: JSON.stringify({ suspend: true })
+      });
+
+      loadProjects();
+    }
+
+    async function extendProject(id, days) {
+      await fetch(`http://localhost:5000/admin/projects/${id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-key": adminKey
+        },
+        body: JSON.stringify({ addDays: days })
+      });
+
+      loadProjects();
+    }
+
+    loadProjects();
+  </script>
+</body>
+</html>
