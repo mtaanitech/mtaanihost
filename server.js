@@ -40,6 +40,15 @@ app.use(cors({
 
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true, limit: "1mb" }));
+app.use(express.static(path.join(__dirname, "public")));
+
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
+app.get("/admin", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "admin.html"));
+});
 
 const globalLimiter = rateLimit({
   windowMs: Number(process.env.RATE_LIMIT_WINDOW_MS || 900000),
@@ -292,10 +301,6 @@ setInterval(checkExpiredProjects, 60 * 1000);
 
 app.get("/health", (req, res) => {
   res.json({ ok: true, service: "MtaaniHost" });
-});
-
-app.get("/", (req, res) => {
-  res.send("MtaaniHost API is running");
 });
 
 app.post(
